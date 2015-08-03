@@ -2,7 +2,7 @@
 
 This is the implementation of a cache friendly priority queue as a [B-heap](https://en.wikipedia.org/wiki/B-heap).
 
-The workings and some performance observarions are available on the blog [playfulprogramming](http://playfulprogramming.blogspot.se/).
+The workings and some performance observarions are available in a post on the blog [playfulprogramming](http://playfulprogramming.blogspot.se/2015/08/cache-optimizing-priority-queue.html).
 
 Usage differs slightly from [std::priority_queue<T>](http://en.cppreference.com/w/cpp/container/priority_queue)
 
