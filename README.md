@@ -9,7 +9,7 @@ Usage differs slightly from [std::priority_queue<T>](http://en.cppreference.com/
 The (simplified) signature is:
 
 ```Cpp
-template <typename Prio, typename Value, class Compare = std::less<Prio>
+template <size_t miniheap_size, typename Prio, typename Value, class Compare = std::less<Prio>
 class pri_queue
 {
 public:
@@ -29,6 +29,11 @@ public:
 The reason for separate priority field and value data is that it offers much better performance than to have a priority queue over a struct/pair/tuple holding both and compare priority on it.
 
 It is legal to set `Value` as `void`, in which case `push()` will accept only one parameter, and `top()` will return `Prio const&`, but generally performance will suffer when doing so.
+
+`miniheap_size` is what you can tweak for optimum performance. How large to set
+it depends on the size of the `Prio` data type and the size of the cache lines.
+See the above mentioned
+[blog post](http://playfulprogramming.blogspot.se/2015/08/cache-optimizing-priority-queue.html) for guidance.
 
 The real signatures for `push()` uses perfect forwarding.
 
