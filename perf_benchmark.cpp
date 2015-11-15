@@ -158,6 +158,55 @@ private:
 };
 
 
+template <typename Q, uint64_t num_cycles>
+class reschedule
+{
+public:
+  reschedule(std::size_t size)
+  {
+    for (uint64_t i = 0; i != size; ++i)
+    {
+      add(q, n[i]);
+    }
+  }
+  void operator()(uint64_t size)
+  {
+    auto p                = n + size;
+    auto remaining_cycles = num_cycles;
+    while (remaining_cycles--)
+    {
+      q.reschedule_top(*p++);
+    }
+  }
+private:
+  Q q;
+};
+
+template <typename Q, uint64_t num_cycles>
+class pop_push
+{
+public:
+  pop_push(std::size_t size)
+  {
+    for (uint64_t i = 0; i != size; ++i)
+    {
+      add(q, n[i]);
+    }
+  }
+  void operator()(uint64_t size)
+  {
+    auto p                = n + size;
+    auto remaining_cycles = num_cycles;
+    while (remaining_cycles--)
+    {
+      q.pop();
+      add(q, *p++);
+    }
+  }
+private:
+  Q q;
+};
+
 inline
 bool operator<(const std::pair<int, std::unique_ptr<int>> &lh,
                const std::pair<int, std::unique_ptr<int>> &rh)
@@ -226,6 +275,12 @@ void measure_prio_queue(int argc, char *argv[])
                                               "operate prio_queue<int,int>",
                                               min_test_duration);
 
+  benchmark.measure<reschedule<qintint, 1000>>(test_sizes,
+                                               "reschedule prio_queue<int,int>",
+                                               min_test_duration);
+  benchmark.measure<pop_push<qintint, 1000>>(test_sizes,
+                                             "reschedule with pop/push prio_queue<int,int>",
+                                             min_test_duration);
 
   benchmark.measure<populate<qintp>>(test_sizes,
                                      "populate prio_queue<int,ptr>",
@@ -244,8 +299,7 @@ int main(int argc, char *argv[])
   std::random_device              rd;
   std::mt19937                    gen(rd());
   std::uniform_int_distribution<> dist(1, 10000000);
-  std::fill(std::begin(n), std::end(n), dist(gen));
-
+  for (auto& i : n) i = dist(gen);
 
   std::cout << sizeof(int) << ' '
       << sizeof(std::pair<int, std::unique_ptr<int>>) << '\n';
@@ -263,6 +317,10 @@ int main(int argc, char *argv[])
 
   CSV_reporter     reporter("/tmp/q/std", &std::cout);
   benchmark<Clock> benchmark(reporter);
+
+  benchmark.measure<pop_push<qint, 1000>>(test_sizes,
+                                             "std pop/push",
+                                             min_test_duration);
 
   benchmark.measure<populate<qint>>(test_sizes,
                                     "populate priority_queue<int>",

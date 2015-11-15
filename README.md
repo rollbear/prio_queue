@@ -21,6 +21,7 @@ public:
   void                           push(Prio p, Value v);
   std::pair<Prio const&, Value&> top() const noexcept;
   void                           pop();
+  void                           reschedule_top(Prio);
   bool                           empty() const noexcept;
   std::size_t                    size() const noexcept();
 };
@@ -36,6 +37,9 @@ See the above mentioned
 [blog post](http://playfulprogramming.blogspot.se/2015/08/cache-optimizing-priority-queue.html) for guidance.
 
 The real signatures for `push()` uses perfect forwarding.
+
+`reschedule_top()` is synonymous to `auto v = q.top(); q.pop(); q.push(v);`, but
+is usually faster.
 
 There is an additional allocator parameter.
 

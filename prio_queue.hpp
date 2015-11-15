@@ -413,6 +413,14 @@ public:
 
   void pop() noexcept(std::is_nothrow_destructible<T>::value);
 
+  template <typename U=V>
+  std::enable_if_t<!std::is_same<U, void>::value>
+  reschedule_top(T t);
+
+  template <typename U=V>
+  std::enable_if_t<std::is_same<U, void>::value>
+  reschedule_top(T t);
+
   bool empty() const noexcept;
 
   std::size_t size() const noexcept;
@@ -423,11 +431,11 @@ private:
   bool sorts_before(value_type const &lv, value_type const &rv) const noexcept;
 
   prio_q_internal::skip_vector<T, block_size, Allocator> m_storage;
+  size_t do_reschedule_top(T t) noexcept(noexcept(std::declval<T&>() = std::declval<T&&>()));
 };
 
 
-template <std::size_t block_size, typename T, typename V, typename Compare,
-                                  typename Allocator>
+template <std::size_t block_size, typename T, typename V, typename Compare, typename Allocator>
 template <typename U, typename X>
 inline
 std::enable_if_t<std::is_same<X, void>::value>
@@ -545,6 +553,55 @@ noexcept
 {
   assert(!empty());
   return { m_storage[1], P::top() };
+}
+
+template <std::size_t block_size, typename T, typename V, typename Compare, typename Allocator>
+template <typename U>
+inline
+std::enable_if_t<!std::is_same<U, void>::value>
+prio_queue<block_size, T, V, Compare, Allocator>::
+reschedule_top(T t)
+{
+  assert(!empty());
+  auto val   = std::move(P::top());
+  size_t idx = do_reschedule_top(t);
+  P::store(idx, std::move(val));
+}
+
+template <std::size_t block_size, typename T, typename V, typename Compare, typename Allocator>
+template <typename U>
+inline
+std::enable_if_t<std::is_same<U, void>::value>
+prio_queue<block_size, T, V, Compare, Allocator>::
+reschedule_top(T t)
+{
+  assert(!empty());
+  do_reschedule_top(t);
+}
+
+template <std::size_t block_size, typename T, typename V, typename Compare, typename Allocator>
+size_t
+prio_queue<block_size, T, V, Compare, Allocator>::
+do_reschedule_top(T t)
+noexcept(noexcept(std::declval<T&>() = std::declval<T&&>()))
+{
+  std::size_t idx      = 1;
+  auto const  last_idx = m_storage.size() - 1;
+  for (;;)
+  {
+    auto lc = address::child_of(idx);
+    if (rollbear_prio_q_unlikely(lc > last_idx)) break;
+    auto const sibling_offset = rollbear_prio_q_unlikely(address::is_block_leaf(idx)) ? address::block_size : 1;
+    auto rc = lc + sibling_offset;
+    auto i = rc <= last_idx && !sorts_before(m_storage[lc], m_storage[rc]);
+    auto next = i ? rc : lc;
+    if (sorts_before(t, m_storage[next])) break;
+    m_storage[idx] = std::move(m_storage[next]);
+    P::move(next, idx);
+    idx = next;
+  }
+  m_storage[idx] = std::move(t);
+  return idx;
 }
 
 template <std::size_t block_size, typename T, typename V, typename Compare,

@@ -13,6 +13,7 @@
 
 
 #include "prio_queue.hpp"
+#include <queue>
 
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
@@ -293,6 +294,192 @@ TEST_CASE("randomly inserted elements are popped sorted", "heap")
     q.pop();
   }
   REQUIRE(q.empty());
+}
+
+TEST_CASE("reschedule top with highest prio leaves order unchanged", "heap")
+{
+  prio_queue<4, int, int*> q;
+  //              0  1   2   3  4   5  6   7   8
+  int nums[] = { 32, 1, 88, 16, 9, 11, 3, 22, 23 };
+  for (auto& i : nums) q.push(i, &i);
+  REQUIRE(q.top().first == 1);
+  REQUIRE(q.top().second == &nums[1]);
+  REQUIRE(*q.top().second == 1);
+
+  q.reschedule_top(2);
+
+  REQUIRE(q.top().first == 2);
+  REQUIRE(q.top().second == &nums[1]);
+  q.pop();
+  REQUIRE(q.top().first == 3);
+  REQUIRE(q.top().second == &nums[6]);
+  q.pop();
+  REQUIRE(q.top().first == 9);
+  REQUIRE(q.top().second == &nums[4]);
+  q.pop();
+  REQUIRE(q.top().first == 11);
+  REQUIRE(q.top().second == &nums[5]);
+  q.pop();
+  REQUIRE(q.top().first == 16);
+  REQUIRE(q.top().second == &nums[3]);
+  q.pop();
+  REQUIRE(q.top().first == 22);
+  REQUIRE(q.top().second == &nums[7]);
+  q.pop();
+  REQUIRE(q.top().first == 23);
+  REQUIRE(q.top().second == &nums[8]);
+  q.pop();
+  REQUIRE(q.top().first == 32);
+  REQUIRE(q.top().second == &nums[0]);
+  q.pop();
+  REQUIRE(q.top().first == 88);
+  REQUIRE(q.top().second == &nums[2]);
+  q.pop();
+  REQUIRE(q.empty());
+}
+
+TEST_CASE("reschedule to mid range moves element to correct place", "heap")
+{
+  prio_queue<4, int, int*> q;
+  //              0  1   2   3  4   5  6   7   8
+  int nums[] = { 32, 1, 88, 16, 9, 11, 3, 22, 23 };
+  for (auto& i : nums) q.push(i, &i);
+  REQUIRE(q.top().first == 1);
+  REQUIRE(q.top().second == &nums[1]);
+  REQUIRE(*q.top().second == 1);
+
+  q.reschedule_top(12);
+
+  REQUIRE(q.top().first == 3);
+  REQUIRE(q.top().second == &nums[6]);
+  q.pop();
+  REQUIRE(q.top().first == 9);
+  REQUIRE(q.top().second == &nums[4]);
+  q.pop();
+  REQUIRE(q.top().first == 11);
+  REQUIRE(q.top().second == &nums[5]);
+  q.pop();
+  REQUIRE(q.top().first == 12);
+  REQUIRE(q.top().second == &nums[1]);
+  q.pop();
+  REQUIRE(q.top().first == 16);
+  REQUIRE(q.top().second == &nums[3]);
+  q.pop();
+  REQUIRE(q.top().first == 22);
+  REQUIRE(q.top().second == &nums[7]);
+  q.pop();
+  REQUIRE(q.top().first == 23);
+  REQUIRE(q.top().second == &nums[8]);
+  q.pop();
+  REQUIRE(q.top().first == 32);
+  REQUIRE(q.top().second == &nums[0]);
+  q.pop();
+  REQUIRE(q.top().first == 88);
+  REQUIRE(q.top().second == &nums[2]);
+  q.pop();
+  REQUIRE(q.empty());
+}
+
+TEST_CASE("reschedule to last moves element to correct place", "heap")
+{
+  prio_queue<4, int, int*> q;
+  //              0  1   2   3  4   5  6   7   8
+  int nums[] = { 32, 1, 88, 16, 9, 11, 3, 22, 23 };
+  for (auto& i : nums) q.push(i, &i);
+  REQUIRE(q.top().first == 1);
+  REQUIRE(q.top().second == &nums[1]);
+  REQUIRE(*q.top().second == 1);
+
+  q.reschedule_top(89);
+
+  REQUIRE(q.top().first == 3);
+  REQUIRE(q.top().second == &nums[6]);
+  q.pop();
+  REQUIRE(q.top().first == 9);
+  REQUIRE(q.top().second == &nums[4]);
+  q.pop();
+  REQUIRE(q.top().first == 11);
+  REQUIRE(q.top().second == &nums[5]);
+  q.pop();
+  REQUIRE(q.top().first == 16);
+  REQUIRE(q.top().second == &nums[3]);
+  q.pop();
+  REQUIRE(q.top().first == 22);
+  REQUIRE(q.top().second == &nums[7]);
+  q.pop();
+  REQUIRE(q.top().first == 23);
+  REQUIRE(q.top().second == &nums[8]);
+  q.pop();
+  REQUIRE(q.top().first == 32);
+  REQUIRE(q.top().second == &nums[0]);
+  q.pop();
+  REQUIRE(q.top().first == 88);
+  REQUIRE(q.top().second == &nums[2]);
+  q.pop();
+  REQUIRE(q.top().first == 89);
+  REQUIRE(q.top().second == &nums[1]);
+  q.pop();
+  REQUIRE(q.empty());
+}
+
+TEST_CASE("reschedule top of 2 elements to last", "[heap]")
+{
+  prio_queue<8, int, void> q;
+  q.push(1);
+  q.push(2);
+  REQUIRE(q.top() == 1);
+  q.reschedule_top(3);
+  REQUIRE(q.top() == 2);
+}
+
+TEST_CASE("reschedule top of 3 elements left to 2nd", "[heap]")
+{
+  prio_queue<8, int, void> q;
+  q.push(1);
+  q.push(2);
+  q.push(4);
+  REQUIRE(q.top() == 1);
+  q.reschedule_top(3);
+  REQUIRE(q.top() == 2);
+}
+
+TEST_CASE("reschedule top of 3 elements right to 2nd", "[heap]")
+{
+  prio_queue<8, int, void> q;
+  q.push(1);
+  q.push(4);
+  q.push(2);
+  REQUIRE(q.top() == 1);
+  q.reschedule_top(3);
+  REQUIRE(q.top() == 2);
+}
+
+
+TEST_CASE("reschedule top random gives same resultas pop/push", "[heap]")
+{
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<unsigned> dist(1,100000);
+
+  prio_queue<8, unsigned, void> pq;
+  std::priority_queue<unsigned, std::vector<unsigned>, std::greater<>> stdq;
+
+  for (size_t outer = 0; outer < 100U; ++outer)
+  {
+    unsigned num = gen();
+    pq.push(num);
+    stdq.push(num);
+    for (size_t inner = 0; inner < 100; ++inner)
+    {
+      unsigned newval = gen();
+      pq.reschedule_top(newval);
+      stdq.pop();
+      stdq.push(newval);
+      auto n = pq.top();
+      auto sn = stdq.top();
+      REQUIRE(sn == n);
+    }
+  }
 }
 
 struct ptr_cmp
