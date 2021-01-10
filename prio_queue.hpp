@@ -73,7 +73,6 @@ private:
   std::size_t grow(U &&u);
 
   template <typename U = T>
-  static
   std::enable_if_t<std::is_pod<U>::value>
   move_to(T const *b, std::size_t s, T *ptr) noexcept;
 
@@ -225,7 +224,7 @@ grow(U &&u)
 {
   auto desired_size = m_storage_size ? m_storage_size * 2 : block_size * 16;
   auto ptr          = A::allocate(*this, desired_size, m_ptr);
-  auto idx          = 0;
+  std::size_t idx   = 0;
   try
   {
     A::construct(*this, ptr + m_end + 1, std::forward<U>(u));
