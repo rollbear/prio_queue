@@ -9,8 +9,9 @@ Usage differs slightly from [std::priority_queue<T>](http://en.cppreference.com/
 The (simplified) signature is:
 
 ```Cpp
+// in namespace rollbear
 template <size_t miniheap_size, typename Prio, typename Value, class Compare = std::less<Prio>>
-class pri_queue
+class prio_queue
 {
 public:
   prio_queue(Compare const& comp = Compare());
