@@ -17,6 +17,7 @@
 #include <vector>
 #include <cassert>
 #include <tuple>
+#include <cstddef>
 
 
 #ifdef __GNUC__
@@ -62,23 +63,24 @@ public:
   std::size_t size() const noexcept;
 private:
   template <typename U = T>
-  std::enable_if_t<std::is_pod<U>::value>
+  std::enable_if_t<std::is_standard_layout<U>::value && std::is_trivial<U>::value>
   destroy() noexcept { }
 
   template <typename U = T>
-  std::enable_if_t<!std::is_pod<U>::value>
+  std::enable_if_t<!std::is_standard_layout<U>::value || !std::is_trivial<U>::value>
   destroy() noexcept(std::is_nothrow_destructible<T>::value);
 
   template <typename U>
   std::size_t grow(U &&u);
 
   template <typename U = T>
-  std::enable_if_t<std::is_pod<U>::value>
+  std::enable_if_t<std::is_standard_layout<U>::value && std::is_trivial<U>::value>
   move_to(T const *b, std::size_t s, T *ptr) noexcept;
 
   template <typename U = T>
   std::enable_if_t<
-      !std::is_pod<U>::value && std::is_nothrow_move_constructible<U>::value>
+      !(std::is_standard_layout<U>::value && std::is_trivial<U>::value)
+      && std::is_nothrow_move_constructible<U>::value>
   move_to(T *b, std::size_t s, T *ptr)
       noexcept(std::is_nothrow_destructible<T>::value);
 
@@ -171,7 +173,7 @@ back() const noexcept
 
 template <typename T, std::size_t block_size, typename Allocator>
 template <typename U>
-std::enable_if_t<!std::is_pod<U>::value>
+std::enable_if_t<!std::is_standard_layout<U>::value || !std::is_trivial<U>::value>
 skip_vector<T, block_size, Allocator>::
 destroy() noexcept(std::is_nothrow_destructible<T>::value)
 {
@@ -249,7 +251,7 @@ grow(U &&u)
 
 template <typename T, std::size_t block_size, typename Allocator>
 template <typename U>
-std::enable_if_t<std::is_pod<U>::value>
+std::enable_if_t<std::is_standard_layout<U>::value && std::is_trivial<U>::value>
 skip_vector<T, block_size, Allocator>::
 move_to(T const *b, std::size_t s, T *ptr) noexcept
 {
@@ -259,7 +261,8 @@ move_to(T const *b, std::size_t s, T *ptr) noexcept
 template <typename T, std::size_t block_size, typename Allocator>
 template <typename U>
 std::enable_if_t<
-    !std::is_pod<U>::value && std::is_nothrow_move_constructible<U>::value>
+    !(std::is_standard_layout<U>::value && std::is_trivial<U>::value)
+    && std::is_nothrow_move_constructible<U>::value>
 skip_vector<T, block_size, Allocator>::
 move_to(T *b,
         std::size_t s,
